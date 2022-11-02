@@ -30,8 +30,8 @@ public class SimpleAsyncTask extends AsyncTask<Void, Integer, String> {
 
     @Override
     protected String doInBackground(Void... voids) {
-        
-        for (int i = mProgressBar.get().getProgress(); i <= s/100; i++) {
+
+        for (int i = mProgressBar.get().getProgress()/100; i <= s/100; i++) {
             if (isCancelled())
                 break;
             else {
