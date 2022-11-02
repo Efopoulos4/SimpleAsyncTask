@@ -3,37 +3,81 @@ package com.example.simpleasynctask;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
+
 public class MainActivity extends AppCompatActivity {
+
     private TextView mTextView;
     private ProgressBar mProgressBar;
     private static final String TEXT_STATE = "currentText";
+    private static final String PROGRESSBAR_STATE = "currentBarState";
+    private static final String MAX_STATE = "currentMaxState";
+    private AsyncTask<Void, Integer, String> task = null;
+    private boolean enterOnRestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         mTextView = findViewById(R.id.textView1);
         mProgressBar = findViewById(R.id.progressBar);
-
-        if (savedInstanceState != null) {
-            mTextView.setText(savedInstanceState.getString(TEXT_STATE));
-        }
     }
 
     public void startTask(View view) {
         mTextView.setText(R.string.napping);
-        new SimpleAsyncTask(mTextView, mProgressBar).execute();
+        mProgressBar.setProgress(0);
+        task = new SimpleAsyncTask(mTextView, mProgressBar).execute();
     }
 
+    /**
+     * We create new task with staring point the last savedInstanceState
+     * @param savedInstanceState is the last state of the progress bar before the activity destroyed
+     */
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        enterOnRestore = true;
+        super.onRestoreInstanceState(savedInstanceState);
+        mTextView.setText(savedInstanceState.getString(TEXT_STATE));
+        mProgressBar.setMax(savedInstanceState.getInt(MAX_STATE));
+        mProgressBar.setProgress(savedInstanceState.getInt(PROGRESSBAR_STATE));
+        //While rotating the device or closing the app we want to create new task from where the last task ended
+        //But only if the progress bar is running otherwise is going to start without our permission
+        if (!(mProgressBar.getProgress() == 0 || mProgressBar.getProgress() == mProgressBar.getMax())) {
+            task = new SimpleAsyncTask(mTextView, mProgressBar).execute();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //In onResume we want to create new task only if the user exits and renters the app
+        //On resume is also called while rotating the device, in order to separate this 2 actions
+        //We check if onRestoreInstanceState has previously activated and if the task is running
+        if (!enterOnRestore && task != null) {
+            task = new SimpleAsyncTask(mTextView, mProgressBar).execute();
+        }
+        enterOnRestore = false;
+    }
+
+    /**
+     * We save the state before the activity is being destroyed and force the background running to stop
+     * @param outState
+     */
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(TEXT_STATE, mTextView.getText().toString());
+        outState.putInt(MAX_STATE, mProgressBar.getMax());
+        outState.putInt(PROGRESSBAR_STATE, mProgressBar.getProgress());
+        if (task != null) {
+            task.cancel(true);
+        }
     }
 }

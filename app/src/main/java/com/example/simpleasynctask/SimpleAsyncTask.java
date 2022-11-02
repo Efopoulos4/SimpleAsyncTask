@@ -23,21 +23,26 @@ public class SimpleAsyncTask extends AsyncTask<Void, Integer, String> {
         super.onPreExecute();
         Random r = new Random();
         int n = r.nextInt(11);
-        s = n * 200;
+        s = n * 500;
+        s=5000;
         mProgressBar.get().setMax(s);
     }
 
     @Override
     protected String doInBackground(Void... voids) {
-        for(int i = 0 ; i <= s ; i+=100){
-            publishProgress(i);
-            try {
-                Thread.sleep(s/100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        
+        for (int i = mProgressBar.get().getProgress(); i <= s/100; i++) {
+            if (isCancelled())
+                break;
+            else {
+                publishProgress(i*100);
+                try {
+                    Thread.sleep(75);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
         return "Awake at last after sleeping for " + s + " milliseconds!";
     }
 
@@ -52,4 +57,5 @@ public class SimpleAsyncTask extends AsyncTask<Void, Integer, String> {
         super.onProgressUpdate(values);
         mProgressBar.get().setProgress(values[0]);
     }
+
 }
