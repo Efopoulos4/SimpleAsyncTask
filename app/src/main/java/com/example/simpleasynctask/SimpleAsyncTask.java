@@ -5,10 +5,14 @@ import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
+
 import java.lang.ref.WeakReference;
 import java.util.Random;
 
-public class SimpleAsyncTask extends AsyncTask<Void, Integer, String> {
+public class SimpleAsyncTask extends AsyncTask<Void, Integer, String> implements LifecycleObserver {
     private WeakReference<TextView> mTextView;
     private WeakReference<ProgressBar> mProgressBar;
     private int s;
